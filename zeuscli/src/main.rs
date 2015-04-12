@@ -13,7 +13,53 @@
 // limitations under the License.
 
 extern crate zeus;
+extern crate rustc_serialize;
+extern crate docopt;
+
+mod utils;
+
+use docopt::Docopt;
+use utils::CommandResult;
+
+static USAGE: &'static str = "
+Usage:
+    zeus [<command> [<args>]]
+
+Some common zeus commands are:
+    help        Display this message
+    Version     Display version info and exit
+";
+
+#[derive(RustcDecodable, Debug)]
+struct Flags {
+    arg_command: String,
+    arg_args: Vec<String>
+}
 
 fn main() {
-	zeus::print_hello();
+    let flags: Flags = Docopt::new(USAGE)
+                              .and_then(|d| d.decode())
+                              .unwrap_or_else(|e| e.exit());
+
+    // Run the actual command
+    let result = match &flags.arg_command[..] {
+        "" | "help" => execute_help(),
+        _ => execute_notfound()
+    };
+
+    // Set the exit code depending on the result
+    match result {
+        CommandResult::Ok => std::process::exit(0),
+        CommandResult::Err => std::process::exit(1)
+    }
+}
+
+fn execute_help() -> CommandResult {
+    println!("Help!");
+    return CommandResult::Ok;
+}
+
+fn execute_notfound() -> CommandResult  {
+    println!("Not found!");
+    return CommandResult::Err;
 }

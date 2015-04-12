@@ -17,5 +17,9 @@ name = "zeuscli"
 version = "0.0.1"
 authors = ["Layl Conway <laylconway@live.com>"]
 
+[dependencies]
+docopt = "*"
+rustc-serialize = "*"
+
 [dependencies.zeus]
 path = "../"
