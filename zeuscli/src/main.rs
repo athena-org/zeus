@@ -17,17 +17,19 @@ extern crate rustc_serialize;
 extern crate docopt;
 
 mod utils;
+mod commands;
 
 use docopt::Docopt;
 use utils::CommandResult;
 
 static USAGE: &'static str = "
 Usage:
-    zeus [<command> [<args>]]
+    zeus [<command> [<args>...]]
 
 Some common zeus commands are:
     help        Display this message
-    Version     Display version info and exit
+    version     Display version info and exit
+    new         Create a new athena project
 ";
 
 #[derive(RustcDecodable, Debug)]
@@ -37,14 +39,17 @@ struct Flags {
 }
 
 fn main() {
+    // Parse in the command line flags
     let flags: Flags = Docopt::new(USAGE)
-                              .and_then(|d| d.decode())
-                              .unwrap_or_else(|e| e.exit());
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
 
     // Run the actual command
     let result = match &flags.arg_command[..] {
-        "" | "help" => execute_help(),
-        _ => execute_notfound()
+        "" | "help" => commands::help::execute(),
+        "list" => commands::list::execute(),
+        "new" => commands::new::execute(),
+        _ => display_not_found()
     };
 
     // Set the exit code depending on the result
@@ -54,12 +59,7 @@ fn main() {
     }
 }
 
-fn execute_help() -> CommandResult {
-    println!("Help!");
-    return CommandResult::Ok;
-}
-
-fn execute_notfound() -> CommandResult  {
+fn display_not_found() -> CommandResult {
     println!("Not found!");
     return CommandResult::Err;
 }
