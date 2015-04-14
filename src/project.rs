@@ -12,9 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::CommandResult;
+use std::path::PathBuf;
+use std::fs::PathExt;
 
-pub fn execute() -> CommandResult  {
-    println!("List!");
-    return CommandResult::Ok;
+#[derive(Debug)]
+pub struct ZeusProject {
+    path: PathBuf
+}
+
+// TODO: Implement Error
+pub enum CreateError {
+    AlreadyExists
+}
+
+impl ZeusProject {
+    pub fn create(target_path: PathBuf) -> Result<ZeusProject, CreateError> {
+        if target_path.exists() {
+            return Err(CreateError::AlreadyExists);
+        }
+
+        return Ok(ZeusProject {
+            path: target_path
+        });
+    }
 }

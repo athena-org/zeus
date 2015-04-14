@@ -23,13 +23,17 @@ use docopt::Docopt;
 use utils::CommandResult;
 
 static USAGE: &'static str = "
+Athena's project build system.
+
 Usage:
-    zeus [<command> [<args>...]]
+    zeus <command> [<args>...]
+    zeus
 
 Some common zeus commands are:
-    help        Display this message
     version     Display version info and exit
     new         Create a new athena project
+
+See 'zeus help <command>' for more information on a specific command.
 ";
 
 #[derive(RustcDecodable, Debug)]
@@ -45,10 +49,11 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     // Run the actual command
+    // TODO: Change CommandResult to Result<(), Box<Error>> and print the error's description.
     let result = match &flags.arg_command[..] {
-        "" | "help" => commands::help::execute(),
         "list" => commands::list::execute(),
         "new" => commands::new::execute(),
+        "" => display_usage(),
         _ => display_not_found()
     };
 
@@ -57,6 +62,11 @@ fn main() {
         CommandResult::Ok => std::process::exit(0),
         CommandResult::Err => std::process::exit(1)
     }
+}
+
+fn display_usage() -> CommandResult {
+    println!("{}", USAGE);
+    return CommandResult::Err;
 }
 
 fn display_not_found() -> CommandResult {
