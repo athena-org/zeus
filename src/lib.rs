@@ -14,4 +14,8 @@
 
 #![feature(path_ext)]
 
+extern crate toml;
+
 pub mod project;
+
+mod git;

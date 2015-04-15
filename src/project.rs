@@ -13,10 +13,23 @@
 // limitations under the License.
 
 use std::error::Error;
-use std::fs::PathExt;
+use std::fs;
+use std::fs::{PathExt, File};
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use std::io::Write;
 use std::path::PathBuf;
+
+use git;
+
+// ### File Templates ###
+
+static PROJ_TOML: &'static str =
+r#"[game]
+name = "{{game_name}}"
+version = "0.0.1"
+authors = ["{{author_name}}"]"#;
+
 
 // ### Create Error ###
 
@@ -53,14 +66,42 @@ pub struct ZeusProject {
 
 impl ZeusProject {
     pub fn create(target_path: PathBuf) -> Result<ZeusProject, CreateError> {
-        if target_path.exists() {
-            return Err(CreateError::AlreadyExists);
-        }
+        // Sanity check the path
+        if target_path.exists() { return Err(CreateError::AlreadyExists); }
 
+        // Create the actual project
         let project = ZeusProject {
             path: target_path
         };
 
+        // Create the directory for this project
+        fs::create_dir_all(project.path.clone()).unwrap();
+
+        // Generate the sample project file
+        // TODO: Use some templating library
+        let proj_toml = str::replace(PROJ_TOML, "{{game_name}}", "My Game");
+        let proj_toml = str::replace(&proj_toml, "{{author_name}}", "Jane Doe");
+
+        // Actually write the project file to our project directory
+        let mut proj_toml_path = project.path.clone();
+        proj_toml_path.push("Zeus.toml");
+        let mut proj_file = File::create(proj_toml_path).unwrap();
+        proj_file.write_all(&proj_toml.into_bytes()).unwrap();
+
         return Ok(project);
+    }
+
+    pub fn update_athena(&self) {
+        let mut athena_path = self.path.clone();
+        athena_path.push("athena");
+
+        // Delete the old folder if it exists
+        if athena_path.exists() {
+            fs::remove_dir_all(athena_path.clone()).unwrap();
+        }
+
+        // Clone in the latest version of Athena
+        // TODO: Actually clone athena instead of zeus right now for testing
+        git::clone("https://github.com/athena-org/zeus.git", athena_path.to_str().unwrap()).unwrap();
     }
 }

@@ -37,7 +37,9 @@ pub fn execute() -> Result<(), Box<Error>> {
         .unwrap_or_else(|e| e.exit());
 
     // Create a new project
-    let project = try!(ZeusProject::create(PathBuf::from("./test")));
+    let path = PathBuf::from(flags.arg_path);
+    let project = try!(ZeusProject::create(path));
+    project.update_athena();
 
     return Ok(());
 }
