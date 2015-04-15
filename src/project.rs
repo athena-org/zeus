@@ -12,17 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use std::path::PathBuf;
+use std::error::Error;
 use std::fs::PathExt;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use std::path::PathBuf;
+
+// ### Create Error ###
+
+#[derive(Debug)]
+pub enum CreateError {
+    AlreadyExists
+}
+
+impl Error for CreateError {
+    fn description(&self) -> &str {
+        match *self {
+            CreateError::AlreadyExists => "Already Exists"
+        }
+    }
+}
+
+impl Display for CreateError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let message = match *self {
+            CreateError::AlreadyExists => "Destination path already exists."
+        };
+
+        return write!(f, "{}", message);
+    }
+}
+
+
+// ### Zeus Project ###
 
 #[derive(Debug)]
 pub struct ZeusProject {
     path: PathBuf
-}
-
-// TODO: Implement Error
-pub enum CreateError {
-    AlreadyExists
 }
 
 impl ZeusProject {
@@ -31,8 +57,10 @@ impl ZeusProject {
             return Err(CreateError::AlreadyExists);
         }
 
-        return Ok(ZeusProject {
+        let project = ZeusProject {
             path: target_path
-        });
+        };
+
+        return Ok(project);
     }
 }

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use utils::CommandResult;
+use std::error::Error;
 
-pub fn execute() -> CommandResult  {
+pub fn execute() -> Result<(), Box<Error>>  {
     println!("List!");
-    return CommandResult::Ok;
+    return Ok(());
 }

@@ -12,10 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use std::error::Error;
 use std::path::PathBuf;
 use docopt::Docopt;
+
 use zeus::project::ZeusProject;
-use utils::CommandResult;
 
 static USAGE: &'static str = "
 Athena's project build system.
@@ -29,19 +30,14 @@ struct Flags {
     arg_path: String
 }
 
-pub fn execute() -> CommandResult {
+pub fn execute() -> Result<(), Box<Error>> {
     // Parse in the command line flags
     let flags: Flags = Docopt::new(USAGE)
         .and_then(|d| d.decode())
         .unwrap_or_else(|e| e.exit());
 
-    // Attempt to create a new
-    let projectResult = ZeusProject::create(PathBuf::from("./test"));
+    // Create a new project
+    let project = try!(ZeusProject::create(PathBuf::from("./test")));
 
-    let project = match projectResult {
-        Err(_) => return CommandResult::Err,
-        Ok(v) => v
-    };
-
-    return CommandResult::Ok;
+    return Ok(());
 }

@@ -19,8 +19,8 @@ extern crate docopt;
 mod utils;
 mod commands;
 
+use std::error::Error;
 use docopt::Docopt;
-use utils::CommandResult;
 
 static USAGE: &'static str = "
 Athena's project build system.
@@ -31,6 +31,7 @@ Usage:
 
 Some common zeus commands are:
     version     Display version info and exit
+    list        Display a list of commands
     new         Create a new athena project
 
 See 'zeus help <command>' for more information on a specific command.
@@ -59,17 +60,23 @@ fn main() {
 
     // Set the exit code depending on the result
     match result {
-        CommandResult::Ok => std::process::exit(0),
-        CommandResult::Err => std::process::exit(1)
+        Ok(_) => std::process::exit(0),
+        Err(err) => {
+            println!("{}", err);
+            std::process::exit(1)
+        }
     }
 }
 
-fn display_usage() -> CommandResult {
+
+// ### Misc Command Handlers ###
+
+fn display_usage() -> Result<(), Box<Error>> {
     println!("{}", USAGE);
-    return CommandResult::Err;
+    return Ok(());
 }
 
-fn display_not_found() -> CommandResult {
-    println!("Not found!");
-    return CommandResult::Err;
+fn display_not_found() -> Result<(), Box<Error>> {
+    println!("Unknown command!");
+    return Ok(());
 }
