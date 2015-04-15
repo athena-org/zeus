@@ -57,6 +57,32 @@ impl Display for CreateError {
 }
 
 
+// ### Open Error ###
+
+#[derive(Debug)]
+pub enum OpenError {
+    NotAZeusProject
+}
+
+impl Error for OpenError {
+    fn description(&self) -> &str {
+        match *self {
+            OpenError::NotAZeusProject => "Not a Zeus Project"
+        }
+    }
+}
+
+impl Display for OpenError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let message = match *self {
+            OpenError::NotAZeusProject => "Destination is not a Zeus project."
+        };
+
+        return write!(f, "{}", message);
+    }
+}
+
+
 // ### Zeus Project ###
 
 #[derive(Debug)]
@@ -65,6 +91,8 @@ pub struct ZeusProject {
 }
 
 impl ZeusProject {
+    // ## Constructors ##
+
     pub fn create(target_path: PathBuf) -> Result<ZeusProject, CreateError> {
         // Sanity check the path
         if target_path.exists() { return Err(CreateError::AlreadyExists); }
@@ -89,6 +117,17 @@ impl ZeusProject {
         proj_file.write_all(&proj_toml.into_bytes()).unwrap();
 
         return Ok(project);
+    }
+
+    pub fn open(target_path: PathBuf) -> Result<ZeusProject, OpenError> {
+        return Err(OpenError::NotAZeusProject);
+    }
+
+
+    // ## Memeber Functions ##
+
+    pub fn prepare_for_editor(&self) {
+        self.update_athena();
     }
 
     pub fn update_athena(&self) {

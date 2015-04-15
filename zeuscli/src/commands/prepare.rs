@@ -13,32 +13,17 @@
 // limitations under the License.
 
 use std::error::Error;
-use std::path::PathBuf;
-use docopt::Docopt;
+use std::env;
 
 use zeus::project::ZeusProject;
 
-static USAGE: &'static str = "
-Athena's project build system.
-
-Usage:
-    zeus new <path>
-";
-
-#[derive(RustcDecodable, Debug)]
-struct Flags {
-    arg_path: String
-}
-
 pub fn execute() -> Result<(), Box<Error>> {
-    // Parse in the command line flags
-    let flags: Flags = Docopt::new(USAGE)
-        .and_then(|d| d.decode())
-        .unwrap_or_else(|e| e.exit());
+	// Open up the current project
+	let path = env::current_dir().unwrap();
+    let project = try!(ZeusProject::open(path));
 
-    // Create a new project
-    let path = PathBuf::from(flags.arg_path);
-    try!(ZeusProject::create(path));
+	// Run the actual command
+	project.prepare_for_editor();
 
-    return Ok(());
+	return Ok(());
 }
