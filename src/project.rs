@@ -126,7 +126,7 @@ impl ZeusProject {
 
     // ## Memeber Functions ##
 
-    pub fn prepare_for_editor(&self) {
+    pub fn build_editor(&self) {
         self.update_athena();
     }
 

@@ -33,7 +33,7 @@ Some common zeus commands are:
     version     Display version info and exit
     list        Display a list of commands
     new         Create a new athena project
-    prepare     Prepares the athena project for editor usage
+    setup       Sets up all athena tools for this project
 
 See 'zeus help <command>' for more information on a specific command.
 ";
@@ -55,7 +55,7 @@ fn main() {
     let result = match &flags.arg_command[..] {
         "list" => commands::list::execute(),
         "new" => commands::new::execute(),
-        "prepare" => commands::prepare::execute(),
+        "setup" => commands::setup::execute(),
         "" => display_usage(),
         _ => display_not_found()
     };

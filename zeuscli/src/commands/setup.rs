@@ -23,7 +23,7 @@ pub fn execute() -> Result<(), Box<Error>> {
     let project = try!(ZeusProject::open(path));
 
 	// Run the actual command
-	project.prepare_for_editor();
+	project.build_editor();
 
 	return Ok(());
 }

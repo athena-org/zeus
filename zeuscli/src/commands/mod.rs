@@ -14,4 +14,4 @@
 
 pub mod list;
 pub mod new;
-pub mod prepare;
+pub mod setup;
