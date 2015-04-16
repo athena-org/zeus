@@ -16,7 +16,6 @@ extern crate zeus;
 extern crate rustc_serialize;
 extern crate docopt;
 
-mod utils;
 mod commands;
 
 use std::error::Error;
