@@ -30,52 +30,32 @@ name = "{{game_name}}"
 version = "0.0.1"
 authors = ["{{author_name}}"]"#;
 
+static GITIGNORE: &'static str =
+r#"/athena"#;
+
 
 // ### Create Error ###
 
 #[derive(Debug)]
-pub enum CreateError {
-    AlreadyExists
-}
-
-impl Error for CreateError {
-    fn description(&self) -> &str {
-        match *self {
-            CreateError::AlreadyExists => "Already Exists"
-        }
-    }
-}
-
-impl Display for CreateError {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let message = match *self {
-            CreateError::AlreadyExists => "Destination path already exists."
-        };
-
-        return write!(f, "{}", message);
-    }
-}
-
-
-// ### Open Error ###
-
-#[derive(Debug)]
-pub enum OpenError {
+pub enum ZeusProjectError {
+    AlreadyExists,
     NotAZeusProject
 }
 
-impl Error for OpenError {
+impl Error for ZeusProjectError {
     fn description(&self) -> &str {
         match *self {
-            OpenError::NotAZeusProject => "Not a Zeus Project"
+            ZeusProjectError::AlreadyExists => "Already Exists",
+            ZeusProjectError::NotAZeusProject => "Not a Zeus Project"
         }
     }
 }
 
-impl Display for OpenError {
+impl Display for ZeusProjectError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let message = match *self {
-            OpenError::NotAZeusProject => "Destination is not a Zeus project."
+            ZeusProjectError::AlreadyExists => "Destination path already exists.",
+            ZeusProjectError::NotAZeusProject => "Destination is not a Zeus project."
         };
 
         return write!(f, "{}", message);
@@ -87,60 +67,85 @@ impl Display for OpenError {
 
 #[derive(Debug)]
 pub struct ZeusProject {
-    path: PathBuf
+    directory: PathBuf
 }
 
 impl ZeusProject {
     // ## Constructors ##
 
-    pub fn create(target_path: PathBuf) -> Result<ZeusProject, CreateError> {
+    pub fn create(target_dir: PathBuf) -> Result<ZeusProject, ZeusProjectError> {
         // Sanity check the path
-        if target_path.exists() { return Err(CreateError::AlreadyExists); }
+        if target_dir.exists() { return Err(ZeusProjectError::AlreadyExists); }
 
         // Create the actual project
         let project = ZeusProject {
-            path: target_path
+            directory: target_dir
         };
 
         // Create the directory for this project
-        fs::create_dir_all(project.path.clone()).unwrap();
+        fs::create_dir_all(project.directory.clone()).unwrap();
 
         // Generate the sample project file
         // TODO: Use some templating library
         let proj_toml = str::replace(PROJ_TOML, "{{game_name}}", "My Game");
         let proj_toml = str::replace(&proj_toml, "{{author_name}}", "Jane Doe");
 
-        // Actually write the project file to our project directory
-        let mut proj_toml_path = project.path.clone();
-        proj_toml_path.push("Zeus.toml");
-        let mut proj_file = File::create(proj_toml_path).unwrap();
-        proj_file.write_all(&proj_toml.into_bytes()).unwrap();
+        // Create basic
+        project.create_file("Zeus.toml", &proj_toml);
+        project.create_file(".gitignore", GITIGNORE);
 
         return Ok(project);
     }
 
-    pub fn open(target_path: PathBuf) -> Result<ZeusProject, OpenError> {
-        return Err(OpenError::NotAZeusProject);
+    pub fn open(target_dir: PathBuf) -> Result<ZeusProject, ZeusProjectError> {
+        // Sanity check the path
+        let mut toml_path = target_dir.clone();
+        toml_path.push("Zeus.toml");
+        if !toml_path.exists() { return Err(ZeusProjectError::NotAZeusProject); }
+
+        // We're in a valid project
+        let project = ZeusProject {
+            directory: target_dir
+        };
+
+        return Ok(project);
     }
 
 
-    // ## Memeber Functions ##
+    // ## Helpers Functions ##
 
     pub fn build_editor(&self) {
-        self.update_athena();
+        self.redownload_athena();
     }
 
-    pub fn update_athena(&self) {
-        let mut athena_path = self.path.clone();
-        athena_path.push("athena");
+    fn redownload_athena(&self) {
+        let mut athena_dir = self.directory.clone();
+        athena_dir.push("athena");
 
         // Delete the old folder if it exists
-        if athena_path.exists() {
-            fs::remove_dir_all(athena_path.clone()).unwrap();
+        if athena_dir.exists() {
+            // Set readonly on all files and directories to false
+            for file in fs::walk_dir(&athena_dir).unwrap() {
+                let path = file.unwrap().path();
+                let mut permissions = fs::metadata(&path).unwrap().permissions();
+                permissions.set_readonly(false);
+                fs::set_permissions(&path, permissions).unwrap();
+            }
+
+            // Actually remove the directory
+            fs::remove_dir_all(&athena_dir).unwrap();
         }
 
         // Clone in the latest version of Athena
         // TODO: Actually clone athena instead of zeus right now for testing
-        git::clone("https://github.com/athena-org/zeus.git", athena_path.to_str().unwrap()).unwrap();
+        let athena_dir_str = athena_dir.to_str().unwrap();
+        git::clone("https://github.com/athena-org/zeus.git", athena_dir_str, "develop").unwrap();
+    }
+
+    fn create_file(&self, name: &str, data: &str) {
+        let mut path = self.directory.clone();
+        path.push(name);
+        let mut file = File::create(path).unwrap();
+        file.write_all(&data.as_bytes()).unwrap();
     }
 }

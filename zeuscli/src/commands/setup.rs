@@ -22,7 +22,7 @@ pub fn execute() -> Result<(), Box<Error>> {
 	let path = env::current_dir().unwrap();
     let project = try!(ZeusProject::open(path));
 
-	// Run the actual command
+	// Build all the tools, currently only the editor
 	project.build_editor();
 
 	return Ok(());

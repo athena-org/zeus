@@ -51,7 +51,6 @@ fn main() {
         .unwrap_or_else(|e| e.exit());
 
     // Run the actual command
-    // TODO: Change CommandResult to Result<(), Box<Error>> and print the error's description.
     let result = match &flags.arg_command[..] {
         "list" => commands::list::execute(),
         "new" => commands::new::execute(),
@@ -79,6 +78,7 @@ fn display_usage() -> Result<(), Box<Error>> {
 }
 
 fn display_not_found() -> Result<(), Box<Error>> {
+    // TODO: Implement this
     println!("Unknown command!");
     return Ok(());
 }

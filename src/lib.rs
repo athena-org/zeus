@@ -13,6 +13,8 @@
 // limitations under the License.
 
 #![feature(path_ext)]
+#![feature(fs_walk)]
+#![feature(fs)]
 
 extern crate toml;
 

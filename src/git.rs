@@ -24,9 +24,13 @@ static GIT_PATH: &'static str = r#"C:\Program Files (x86)\Git\bin\git.exe"#;
 #[cfg(not(windows))]
 static GIT_PATH: &'static str = r#"git"#;
 
-pub fn clone(url: &str, path: &str) -> Result<(), ()> {
+pub fn clone(url: &str, path: &str, branch_or_tag: &str) -> Result<(), ()> {
 	let output = Command::new(GIT_PATH)
-		.arg("clone").arg(url).arg(path)
+		.args(&[
+			"clone",
+			"--branch", branch_or_tag,
+			"--depth", "1",
+			url, path])
 		.stdin(Stdio::null())
 		.output()
 		.unwrap_or_else(|_| {
