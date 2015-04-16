@@ -78,7 +78,5 @@ fn display_usage() -> Result<(), Box<Error>> {
 }
 
 fn display_not_found() -> Result<(), Box<Error>> {
-    // TODO: Implement this
-    println!("Unknown command!");
-    return Ok(());
+    unimplemented!();
 }

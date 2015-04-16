@@ -18,12 +18,12 @@ use std::env;
 use zeus::project::ZeusProject;
 
 pub fn execute() -> Result<(), Box<Error>> {
-	// Open up the current project
-	let path = env::current_dir().unwrap();
+    // Open up the current project
+    let path = env::current_dir().unwrap();
     let project = try!(ZeusProject::open(path));
 
-	// Build all the tools, currently only the editor
-	project.build_editor();
+    // Build all the tools, currently only the editor
+    project.build_editor();
 
-	return Ok(());
+    return Ok(());
 }
