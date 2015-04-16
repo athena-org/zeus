@@ -16,3 +16,7 @@
 name = "zeus"
 version = "0.0.1"
 authors = ["Layl Conway <laylconway@live.com>"]
+license = "Apache-2.0"
+
+[dependencies]
+toml = "0.1"
