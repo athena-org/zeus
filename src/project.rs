@@ -28,6 +28,8 @@ static PROJ_TOML: &'static str =
 r#"[game]
 name = "{{game_name}}"
 version = "0.0.1"
+zeus_version = "develop"
+athena_version = "develop"
 authors = ["{{author_name}}"]"#;
 
 static GITIGNORE: &'static str =
