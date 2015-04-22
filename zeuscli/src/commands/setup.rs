@@ -12,12 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![feature(path_ext)]
-#![feature(fs_walk)]
-#![feature(fs)]
+use std::error::Error;
+use std::env;
 
-extern crate toml;
+use zeus::project::ZeusProject;
 
-pub mod project;
+pub fn execute() -> Result<(), Box<Error>> {
+    // Open up the current project
+    let path = env::current_dir().unwrap();
+    let project = try!(ZeusProject::open(path));
 
-mod git;
+    // Build all the tools, currently only the editor
+    project.build_editor();
+
+    return Ok(());
+}

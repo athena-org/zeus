@@ -12,12 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![feature(path_ext)]
-#![feature(fs_walk)]
-#![feature(fs)]
+use std::error::Error;
+use std::path::PathBuf;
+use docopt::Docopt;
 
-extern crate toml;
+use zeus::project::ZeusProject;
 
-pub mod project;
+static USAGE: &'static str = "
+Athena's project build system.
 
-mod git;
+Usage:
+    zeus new <path>
+";
+
+#[derive(RustcDecodable, Debug)]
+struct Flags {
+    arg_path: String
+}
+
+pub fn execute() -> Result<(), Box<Error>> {
+    // Parse in the command line flags
+    let flags: Flags = Docopt::new(USAGE)
+        .and_then(|d| d.decode())
+        .unwrap_or_else(|e| e.exit());
+
+    // Create a new project
+    let path = PathBuf::from(flags.arg_path);
+    try!(ZeusProject::create(path));
+
+    return Ok(());
+}

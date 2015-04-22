@@ -12,12 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![feature(path_ext)]
-#![feature(fs_walk)]
-#![feature(fs)]
-
-extern crate toml;
-
-pub mod project;
-
-mod git;
+pub mod list;
+pub mod new;
+pub mod setup;

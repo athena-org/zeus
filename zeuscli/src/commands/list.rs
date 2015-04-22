@@ -12,12 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![feature(path_ext)]
-#![feature(fs_walk)]
-#![feature(fs)]
+use std::error::Error;
 
-extern crate toml;
-
-pub mod project;
-
-mod git;
+pub fn execute() -> Result<(), Box<Error>>  {
+    unimplemented!();
+}

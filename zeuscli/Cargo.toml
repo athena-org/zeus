@@ -15,7 +15,11 @@
 [package]
 name = "zeuscli"
 version = "0.0.1"
-authors = ["Layl Conway <laylconway@live.com>"]
+authors = ["The Athena Developers"]
+
+[dependencies]
+docopt = "*"
+rustc-serialize = "*"
 
 [dependencies.zeus]
 path = "../"
