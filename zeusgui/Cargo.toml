@@ -13,14 +13,28 @@
 # limitations under the License.
 
 [package]
-name = "zeuscli"
+name = "zeusgui"
 version = "0.0.2"
 authors = ["The Athena Developers"]
 license = "Apache-2.0"
 
-[dependencies]
-docopt = "*"
-rustc-serialize = "*"
-
 [dependencies.zeus]
 path = "../"
+
+[dependencies.conrod]
+git = "https://github.com/PistonDevelopers/conrod"
+
+[dependencies.piston]
+git = "https://github.com/PistonDevelopers/piston"
+
+[dependencies.piston2d-graphics]
+git = "https://github.com/PistonDevelopers/graphics"
+
+[dependencies.pistoncore-glutin_window]
+git = "https://github.com/PistonDevelopers/glutin_window"
+
+[dependencies.piston2d-opengl_graphics]
+git = "https://github.com/PistonDevelopers/opengl_graphics"
+
+[dependencies.elmesque]
+git = "https://github.com/mitchmindtree/elmesque"

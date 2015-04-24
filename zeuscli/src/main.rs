@@ -15,6 +15,7 @@
 extern crate zeus;
 extern crate rustc_serialize;
 extern crate docopt;
+extern crate toml;
 
 mod commands;
 

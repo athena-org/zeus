@@ -17,8 +17,9 @@ use std::fs;
 use std::fs::{PathExt, File};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::io::Write;
+use std::io::{Read, Write};
 use std::path::PathBuf;
+use toml;
 
 use git;
 
@@ -41,14 +42,16 @@ r#"/athena"#;
 #[derive(Debug)]
 pub enum ZeusProjectError {
     AlreadyExists,
-    NotAZeusProject
+    NotAZeusProject,
+    InvalidPath
 }
 
 impl Error for ZeusProjectError {
     fn description(&self) -> &str {
         match *self {
             ZeusProjectError::AlreadyExists => "Already Exists",
-            ZeusProjectError::NotAZeusProject => "Not a Zeus Project"
+            ZeusProjectError::NotAZeusProject => "Not a Zeus Project",
+            ZeusProjectError::InvalidPath => "Not a Valid Path"
         }
     }
 }
@@ -57,7 +60,8 @@ impl Display for ZeusProjectError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let message = match *self {
             ZeusProjectError::AlreadyExists => "Destination path already exists.",
-            ZeusProjectError::NotAZeusProject => "Destination is not a Zeus project."
+            ZeusProjectError::NotAZeusProject => "Destination path is not a Zeus project.",
+            ZeusProjectError::InvalidPath => "Destination path is not valid."
         };
 
         return write!(f, "{}", message);
@@ -69,19 +73,29 @@ impl Display for ZeusProjectError {
 
 #[derive(Debug)]
 pub struct ZeusProject {
-    directory: PathBuf
+    directory: PathBuf,
+    game_name: String
 }
 
 impl ZeusProject {
+    // ## Accessors ##
+
+    pub fn game_name(&self) -> &str {
+        &self.game_name
+    }
+
+
     // ## Constructors ##
 
     pub fn create(target_dir: PathBuf) -> Result<ZeusProject, ZeusProjectError> {
         // Sanity check the path
+        if target_dir.to_str().unwrap().is_empty() { return Err(ZeusProjectError::InvalidPath) }
         if target_dir.exists() { return Err(ZeusProjectError::AlreadyExists); }
 
         // Create the actual project
         let project = ZeusProject {
-            directory: target_dir
+            directory: target_dir,
+            game_name: String::from("My Game")
         };
 
         // Create the directory for this project
@@ -105,9 +119,18 @@ impl ZeusProject {
         toml_path.push("Zeus.toml");
         if !toml_path.exists() { return Err(ZeusProjectError::NotAZeusProject); }
 
+        // Get data from the toml file
+        let mut toml_file = File::open(toml_path).unwrap();
+        let mut toml = String::new();
+        toml_file.read_to_string(&mut toml).unwrap();
+        let value: toml::Value = toml.parse().unwrap();
+
+        let name = value.lookup("game.name").unwrap().as_str().unwrap();
+
         // We're in a valid project
         let project = ZeusProject {
-            directory: target_dir
+            directory: target_dir,
+            game_name: String::from(name)
         };
 
         return Ok(project);
