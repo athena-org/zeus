@@ -14,10 +14,10 @@
 
 use std::error::Error;
 use std::fs;
-use std::fs::{PathExt, File};
+use std::fs::{PathExt};
 use std::fmt;
 use std::fmt::{Display, Formatter};
-use std::io::{Read, Write};
+use std::io::{Write};
 use std::path::PathBuf;
 use toml;
 
@@ -43,7 +43,8 @@ r#"/athena"#;
 pub enum ZeusProjectError {
     AlreadyExists,
     NotAZeusProject,
-    InvalidPath
+    InvalidPath,
+    CorruptedFile(String)
 }
 
 impl Error for ZeusProjectError {
@@ -51,17 +52,19 @@ impl Error for ZeusProjectError {
         match *self {
             ZeusProjectError::AlreadyExists => "Already Exists",
             ZeusProjectError::NotAZeusProject => "Not a Zeus Project",
-            ZeusProjectError::InvalidPath => "Not a Valid Path"
+            ZeusProjectError::InvalidPath => "Not a Valid Path",
+            ZeusProjectError::CorruptedFile(_) => "File Corrupted"
         }
     }
 }
 
 impl Display for ZeusProjectError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let message = match *self {
-            ZeusProjectError::AlreadyExists => "Destination path already exists.",
-            ZeusProjectError::NotAZeusProject => "Destination path is not a Zeus project.",
-            ZeusProjectError::InvalidPath => "Destination path is not valid."
+        let message: String = match *self {
+            ZeusProjectError::AlreadyExists => String::from("Destination path already exists."),
+            ZeusProjectError::NotAZeusProject => String::from("Destination path is not a Zeus project."),
+            ZeusProjectError::InvalidPath => String::from("Destination path is not valid."),
+            ZeusProjectError::CorruptedFile(ref file) => format!("The file {} has been corrupted and could not be read.", file)
         };
 
         return write!(f, "{}", message);
@@ -80,9 +83,8 @@ pub struct ZeusProject {
 impl ZeusProject {
     // ## Accessors ##
 
-    pub fn game_name(&self) -> &str {
-        &self.game_name
-    }
+    pub fn directory(&self) -> &PathBuf { &self.directory }
+    pub fn game_name(&self) -> &str { &self.game_name }
 
 
     // ## Constructors ##
@@ -107,33 +109,26 @@ impl ZeusProject {
         let proj_toml = str::replace(&proj_toml, "{{author_name}}", "Jane Doe");
 
         // Create basic
-        project.create_file("Zeus.toml", &proj_toml);
-        project.create_file(".gitignore", GITIGNORE);
+        create_file(&project, "Zeus.toml", &proj_toml);
+        create_file(&project, ".gitignore", GITIGNORE);
 
-        return Ok(project);
+        Ok(project)
     }
 
     pub fn open(target_dir: PathBuf) -> Result<ZeusProject, ZeusProjectError> {
-        // Sanity check the path
-        let mut toml_path = target_dir.clone();
-        toml_path.push("Zeus.toml");
-        if !toml_path.exists() { return Err(ZeusProjectError::NotAZeusProject); }
-
-        // Get data from the toml file
-        let mut toml_file = File::open(toml_path).unwrap();
-        let mut toml = String::new();
-        toml_file.read_to_string(&mut toml).unwrap();
-        let value: toml::Value = toml.parse().unwrap();
-
-        let name = value.lookup("game.name").unwrap().as_str().unwrap();
-
-        // We're in a valid project
-        let project = ZeusProject {
-            directory: target_dir,
-            game_name: String::from(name)
+        let mut project = ZeusProject {
+            directory: target_dir.clone(),
+            game_name: String::new()
         };
 
-        return Ok(project);
+        // Sanity check the path
+        if !file_exists(&project, "Zeus.toml") { return Err(ZeusProjectError::NotAZeusProject); }
+
+        // Parse in the toml file
+        let value: toml::Value = try!(parse_file(&project, "Zeus.toml"));
+        project.game_name = String::from(value.lookup("game.name").unwrap().as_str().unwrap());
+
+        Ok(project)
     }
 
 
@@ -166,11 +161,41 @@ impl ZeusProject {
         let athena_dir_str = athena_dir.to_str().unwrap();
         git::clone("https://github.com/athena-org/zeus.git", athena_dir_str, "develop").unwrap();
     }
+}
 
-    fn create_file(&self, name: &str, data: &str) {
-        let mut path = self.directory.clone();
+mod io_utils {
+    use std;
+    use std::fs::*;
+    use std::io::{Read, Write};
+    use std::path::PathBuf;
+    use project;
+
+    pub fn file_in_project(project: &project::ZeusProject, name: &str) -> PathBuf {
+        let mut path = project.directory().clone();
         path.push(name);
+        path
+    }
+
+    pub fn file_exists(project: &project::ZeusProject, name: &str) -> bool {
+        let path = file_in_project(project, name);
+        path.exists()
+    }
+
+    pub fn create_file(project: &project::ZeusProject, name: &str, data: &str) {
+        let path = file_in_project(project, name);
         let mut file = File::create(path).unwrap();
         file.write_all(&data.as_bytes()).unwrap();
     }
-}
+
+    pub fn parse_file<T: std::str::FromStr>(project: &project::ZeusProject, name: &str) -> Result<T, project::ZeusProjectError> {
+        let path = file_in_project(project, name);
+        let mut file = File::open(path.clone()).unwrap();
+        let mut file_data = String::new();
+        file.read_to_string(&mut file_data).unwrap();
+
+        match file_data.parse() {
+            Ok(v) => Ok(v),
+            Err(_) => Err(project::ZeusProjectError::CorruptedFile(String::from(path.to_str().unwrap())))
+        }
+    }
+} pub use self::io_utils::*;
