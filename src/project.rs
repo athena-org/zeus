@@ -109,8 +109,8 @@ impl ZeusProject {
         let proj_toml = str::replace(&proj_toml, "{{author_name}}", "Jane Doe");
 
         // Create basic
-        create_file(&project, "Zeus.toml", &proj_toml);
-        create_file(&project, ".gitignore", GITIGNORE);
+        project.create_file("Zeus.toml", &proj_toml);
+        project.create_file(".gitignore", GITIGNORE);
 
         Ok(project)
     }
@@ -122,10 +122,10 @@ impl ZeusProject {
         };
 
         // Sanity check the path
-        if !file_exists(&project, "Zeus.toml") { return Err(ZeusProjectError::NotAZeusProject); }
+        if !project.file_exists("Zeus.toml") { return Err(ZeusProjectError::NotAZeusProject); }
 
         // Parse in the toml file
-        let value: toml::Value = try!(parse_file(&project, "Zeus.toml"));
+        let value: toml::Value = try!(project.parse_file("Zeus.toml"));
         project.game_name = String::from(value.lookup("game.name").unwrap().as_str().unwrap());
 
         Ok(project)
@@ -170,32 +170,34 @@ mod io_utils {
     use std::path::PathBuf;
     use project;
 
-    pub fn file_in_project(project: &project::ZeusProject, name: &str) -> PathBuf {
-        let mut path = project.directory().clone();
-        path.push(name);
-        path
-    }
+    impl project::ZeusProject {
+        pub fn get_file_path(&self, name: &str) -> PathBuf {
+            let mut path = self.directory().clone();
+            path.push(name);
+            path
+        }
 
-    pub fn file_exists(project: &project::ZeusProject, name: &str) -> bool {
-        let path = file_in_project(project, name);
-        path.exists()
-    }
+        pub fn file_exists(&self, name: &str) -> bool {
+            let path = self.get_file_path(name);
+            path.exists()
+        }
 
-    pub fn create_file(project: &project::ZeusProject, name: &str, data: &str) {
-        let path = file_in_project(project, name);
-        let mut file = File::create(path).unwrap();
-        file.write_all(&data.as_bytes()).unwrap();
-    }
+        pub fn create_file(&self, name: &str, data: &str) {
+            let path = self.get_file_path(name);
+            let mut file = File::create(path).unwrap();
+            file.write_all(&data.as_bytes()).unwrap();
+        }
 
-    pub fn parse_file<T: std::str::FromStr>(project: &project::ZeusProject, name: &str) -> Result<T, project::ZeusProjectError> {
-        let path = file_in_project(project, name);
-        let mut file = File::open(path.clone()).unwrap();
-        let mut file_data = String::new();
-        file.read_to_string(&mut file_data).unwrap();
+        pub fn parse_file<T: std::str::FromStr>(&self, name: &str) -> Result<T, project::ZeusProjectError> {
+            let path = self.get_file_path(name);
+            let mut file = File::open(path.clone()).unwrap();
+            let mut file_data = String::new();
+            file.read_to_string(&mut file_data).unwrap();
 
-        match file_data.parse() {
-            Ok(v) => Ok(v),
-            Err(_) => Err(project::ZeusProjectError::CorruptedFile(String::from(path.to_str().unwrap())))
+            match file_data.parse() {
+                Ok(v) => Ok(v),
+                Err(_) => Err(project::ZeusProjectError::CorruptedFile(String::from(path.to_str().unwrap())))
+            }
         }
     }
 } pub use self::io_utils::*;
