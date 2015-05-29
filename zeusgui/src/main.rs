@@ -141,9 +141,9 @@ fn browse_pressed() -> String {
             let mut raw_path: *mut winapi::LPWSTR = std::mem::uninitialized();
             check_result((*item).GetDisplayName(winapi::SIGDN::FILESYSPATH, std::mem::transmute(&mut raw_path)));
 
-            // TODO: Convert from LPWSTR to String
+            let os_path: std::ffi::OsString = OsStringFromPtr::from_wide_ptr(std::mem::transmute(raw_path));
 
-            String::from("test")
+            String::from(os_path.to_str().unwrap())
         };
 
         path
@@ -167,5 +167,23 @@ fn open_pressed(path: &str) -> String {
 fn check_result(result: winapi::HRESULT) {
     if result < 0 {
         return panic!("Error in winapi call: {:x}", result);
+    }
+}
+
+pub trait OsStringFromPtr {
+    unsafe fn from_wide_ptr(winapi::LPWSTR) -> Self;
+}
+
+impl OsStringFromPtr for std::ffi::OsString {
+    unsafe fn from_wide_ptr(ptr: winapi::LPWSTR) -> Self {
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        assert!(!ptr.is_null());
+        let mut len = 0;
+        while *ptr.offset(len) != 0 {
+            len += 1
+        }
+        let slice = std::slice::from_raw_parts(ptr, len as usize);
+        OsString::from_wide(slice)
     }
 }
