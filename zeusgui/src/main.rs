@@ -138,7 +138,7 @@ fn browse_pressed() -> String {
             let mut item: *mut winapi::IShellItem = std::mem::uninitialized();
             check_result(file_dialog.GetResult(std::mem::transmute(&mut item)));
 
-            let mut raw_path: *mut winapi::LPWSTR = std::mem::uninitialized();
+            let mut raw_path: *mut winapi::LPCWSTR = std::mem::uninitialized();
             check_result((*item).GetDisplayName(winapi::SIGDN::FILESYSPATH, std::mem::transmute(&mut raw_path)));
 
             let os_path: std::ffi::OsString = OsStringFromPtr::from_wide_ptr(std::mem::transmute(raw_path));
@@ -171,11 +171,11 @@ fn check_result(result: winapi::HRESULT) {
 }
 
 pub trait OsStringFromPtr {
-    unsafe fn from_wide_ptr(winapi::LPWSTR) -> Self;
+    unsafe fn from_wide_ptr(winapi::LPCWSTR) -> Self;
 }
 
 impl OsStringFromPtr for std::ffi::OsString {
-    unsafe fn from_wide_ptr(ptr: winapi::LPWSTR) -> Self {
+    unsafe fn from_wide_ptr(ptr: winapi::LPCWSTR) -> Self {
         use std::ffi::OsString;
         use std::os::windows::ffi::OsStringExt;
         assert!(!ptr.is_null());
