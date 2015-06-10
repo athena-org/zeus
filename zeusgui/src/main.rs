@@ -17,14 +17,18 @@ extern crate conrod;
 extern crate glutin_window;
 extern crate opengl_graphics;
 extern crate piston;
-extern crate elmesque;
 
-use conrod::*;
-use glutin_window::GlutinWindow;
-use opengl_graphics::{ GlGraphics, OpenGL };
+extern crate winapi;
+extern crate ole32;
+extern crate uuid;
+
+use conrod::{Background, Button, Color, Colorable, Label, Labelable, Positionable, Sizeable, TextBox, Theme, Ui, Widget};
+use conrod::color::{rgb};
+use glutin_window::{GlutinWindow};
+use opengl_graphics::{GlGraphics, OpenGL};
 use opengl_graphics::glyph_cache::GlyphCache;
 use piston::event::*;
-use piston::window::{ WindowSettings, Size };
+use piston::window::{WindowSettings, Size};
 use std::path::{Path, PathBuf};
 use zeus::project::*;
 
@@ -34,7 +38,7 @@ fn main() {
         opengl,
         WindowSettings::new(
             "Athena".to_string(),
-            Size { width: 500, height: 200 }
+            Size { width: 600, height: 200 }
         )
         .exit_on_esc(true)
         .samples(4)
@@ -54,42 +58,95 @@ fn main() {
     for event in event_iter {
         ui.handle_event(&event);
         if let Some(args) = event.render_args() {
-            gl.draw(args.viewport(), |_, gl| {
+            gl.draw(args.viewport(), |c, gl| {
                 // Draw the background
-                Background::new().rgb(0.082, 0.090, 0.094).draw(ui, gl);
+                Background::new().color(rgb(0.082, 0.090, 0.094)).draw(ui, gl);
 
                 // Draw a path textbox
                 TextBox::new(&mut path)
-                    .xy(0.0, 50.0)
+                    .xy(-50.0, 50.0)
                     .dimensions(400.0, 30.0)
-                    .font_size(14)
+                    .font_size(11)
                     .react(|_string: &mut String|{})
                     .set(0, ui);
 
                 Button::new()
-                    .xy(-100.0, 0.0)
+                    .xy(200.0, 50.0)
                     .dimensions(100.0, 30.0)
-                    .label("New")
-                    .react(|| status_label = new_pressed(&path))
+                    .label("Browse")
+                    .react(|| path = browse_pressed())
                     .set(1, ui);
 
-                Button::new()
-                    .xy(100.0, 0.0)
-                    .dimensions(100.0, 30.0)
-                    .label("Open")
-                    .react(|| status_label = open_pressed(&path))
-                    .set(2, ui);
+                if path != "" {
+                    Button::new()
+                        .xy(-100.0, 0.0)
+                        .dimensions(100.0, 30.0)
+                        .label("New")
+                        .react(|| status_label = new_pressed(&path))
+                        .set(2, ui);
+
+                    Button::new()
+                        .xy(100.0, 0.0)
+                        .dimensions(100.0, 30.0)
+                        .label("Open")
+                        .react(|| status_label = open_pressed(&path))
+                        .set(3, ui);
+                }
 
                 Label::new(&status_label)
                     .xy(0.0, -50.0)
-                    .size(16)
-                    .color(elmesque::color::Color::Rgba(1.0, 1.0, 1.0, 1.0))
-                    .set(3, ui);
+                    .font_size(16)
+                    .color(rgb(1.0, 1.0, 1.0))
+                    .set(4, ui);
 
                 // Draw our UI
-                ui.draw(gl);
+                ui.draw(c, gl);
             });
         }
+    }
+}
+
+fn browse_pressed() -> String {
+    unsafe {
+        // TODO: Add cleanup code
+
+        check_result(ole32::CoInitializeEx(::std::ptr::null_mut(), 0));
+
+        // Create the dialog
+        let file_dialog = {
+            let mut file_dialog: *mut winapi::IFileOpenDialog = std::mem::uninitialized();
+            let hresult = ole32::CoCreateInstance(
+                &uuid::CLSID_FileOpenDialog,
+                std::ptr::null_mut(), winapi::CLSCTX_ALL,
+                &uuid::IID_IFileOpenDialog,
+                std::mem::transmute(&mut file_dialog));
+
+            check_result(hresult);
+            &mut *file_dialog
+        };
+
+        check_result(file_dialog.SetOptions(winapi::FILEOPENDIALOGOPTIONS::PICKFOLDERS));
+
+        // Show the dialog
+        if file_dialog.Show(0 as winapi::HWND) < 0 {
+            // Got canceled
+            return String::from("")
+        }
+
+        // Get the file name from the dialog
+        let path = {
+            let mut item: *mut winapi::IShellItem = std::mem::uninitialized();
+            check_result(file_dialog.GetResult(std::mem::transmute(&mut item)));
+
+            let mut raw_path: *mut winapi::LPCWSTR = std::mem::uninitialized();
+            check_result((*item).GetDisplayName(winapi::SIGDN::FILESYSPATH, std::mem::transmute(&mut raw_path)));
+
+            let os_path: std::ffi::OsString = OsStringFromPtr::from_wide_ptr(std::mem::transmute(raw_path));
+
+            String::from(os_path.to_str().unwrap())
+        };
+
+        path
     }
 }
 
@@ -104,5 +161,29 @@ fn open_pressed(path: &str) -> String {
     match ZeusProject::open(PathBuf::from(path)) {
         Ok(p) => String::from(format!("Opened: {}", p.game_name())),
         Err(e) => String::from(format!("Error: {}", e))
+    }
+}
+
+fn check_result(result: winapi::HRESULT) {
+    if result < 0 {
+        return panic!("Error in winapi call: {:x}", result);
+    }
+}
+
+pub trait OsStringFromPtr {
+    unsafe fn from_wide_ptr(winapi::LPCWSTR) -> Self;
+}
+
+impl OsStringFromPtr for std::ffi::OsString {
+    unsafe fn from_wide_ptr(ptr: winapi::LPCWSTR) -> Self {
+        use std::ffi::OsString;
+        use std::os::windows::ffi::OsStringExt;
+        assert!(!ptr.is_null());
+        let mut len = 0;
+        while *ptr.offset(len) != 0 {
+            len += 1
+        }
+        let slice = std::slice::from_raw_parts(ptr, len as usize);
+        OsString::from_wide(slice)
     }
 }

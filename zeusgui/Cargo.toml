@@ -14,9 +14,14 @@
 
 [package]
 name = "zeusgui"
-version = "0.0.2"
+version = "0.0.3"
 authors = ["The Athena Developers"]
 license = "Apache-2.0"
+
+[dependencies]
+winapi = "0.1.20"
+ole32-sys = "0.1.0"
+uuid-sys = "0.1.2"
 
 [dependencies.zeus]
 path = "../"
@@ -35,6 +40,3 @@ git = "https://github.com/PistonDevelopers/glutin_window"
 
 [dependencies.piston2d-opengl_graphics]
 git = "https://github.com/PistonDevelopers/opengl_graphics"
-
-[dependencies.elmesque]
-git = "https://github.com/mitchmindtree/elmesque"
