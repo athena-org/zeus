@@ -38,7 +38,7 @@ fn main() {
         opengl,
         WindowSettings::new(
             "Athena".to_string(),
-            Size { width: 500, height: 200 }
+            Size { width: 600, height: 200 }
         )
         .exit_on_esc(true)
         .samples(4)
@@ -65,13 +65,13 @@ fn main() {
                 // Draw a path textbox
                 TextBox::new(&mut path)
                     .xy(-50.0, 50.0)
-                    .dimensions(300.0, 30.0)
-                    .font_size(14)
+                    .dimensions(400.0, 30.0)
+                    .font_size(11)
                     .react(|_string: &mut String|{})
                     .set(0, ui);
 
                 Button::new()
-                    .xy(150.0, 50.0)
+                    .xy(200.0, 50.0)
                     .dimensions(100.0, 30.0)
                     .label("Browse")
                     .react(|| path = browse_pressed())

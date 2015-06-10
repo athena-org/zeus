@@ -61,7 +61,7 @@ impl Error for ZeusProjectError {
 impl Display for ZeusProjectError {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         let message: String = match *self {
-            ZeusProjectError::AlreadyExists => String::from("Destination path already exists."),
+            ZeusProjectError::AlreadyExists => String::from("Destination path already exists and is not empty."),
             ZeusProjectError::NotAZeusProject => String::from("Destination path is not a Zeus project."),
             ZeusProjectError::InvalidPath => String::from("Destination path is not valid."),
             ZeusProjectError::CorruptedFile(ref file) => format!("The file {} has been corrupted and could not be read.", file)
@@ -92,16 +92,24 @@ impl ZeusProject {
     pub fn create(target_dir: PathBuf) -> Result<ZeusProject, ZeusProjectError> {
         // Sanity check the path
         if target_dir.to_str().unwrap().is_empty() { return Err(ZeusProjectError::InvalidPath) }
-        if target_dir.exists() { return Err(ZeusProjectError::AlreadyExists); }
+
+        // Check if the directory already exists
+        if target_dir.exists() {
+            // It does, check if it's empty
+            if fs::read_dir(target_dir.clone()).unwrap().count() != 0 {
+                // It isn't empty, we can't create a project here
+                return Err(ZeusProjectError::AlreadyExists);
+            }
+        } else {
+            // It doesn't create it
+            fs::create_dir_all(target_dir.clone()).unwrap();
+        }
 
         // Create the actual project
         let project = ZeusProject {
             directory: target_dir,
             game_name: String::from("My Game")
         };
-
-        // Create the directory for this project
-        fs::create_dir_all(project.directory.clone()).unwrap();
 
         // Generate the sample project file
         // TODO: Use some templating library
